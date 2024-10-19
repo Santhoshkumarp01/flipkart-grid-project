@@ -70,19 +70,23 @@ You can also export the data to an Excel file.
 Folder Structure
 flipkart-grid-project/
 │
-├── app.py                  # Main Flask application
-├── static/                 # Static files (CSS, JS, etc.)
-├── templates/              # HTML templates for the app
-├── requirements.txt        # Project dependencies
-└── README.md               # Project documentation
+├── app.py                
+├── static/                 
+├── templates/index.html           
+├── requirements.txt       
+└── README.md 
+└── grocery.py
 
 API Endpoints
 /upload (POST): Accepts image files for processing.
 /product_data (GET): Returns a JSON object containing the processed product details.
 /download_excel (GET): Allows users to download an Excel file with the extracted product information.
 Contributing
-If you want to contribute to this project, please follow these steps:
 
+## Demo
+Check out the demo video [here](https://www.youtube.com/watch?v=your-video-id).
+
+If you want to contribute to this project, please follow these steps:
 Fork the repository.
 Create a new branch (git checkout -b feature-branch).
 Make your changes and commit them (git commit -m 'Add some feature').
