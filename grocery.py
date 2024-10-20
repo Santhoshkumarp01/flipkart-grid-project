@@ -14,27 +14,21 @@ app = Flask(__name__)
 tracked_products = []
 
 # Predefined list of known brands
-known_brands = ['Keo Karpin', 'Pond\'s', 'Dove', 'L\'Oreal', 'Nivea']
+known_brands = ['Keo Karpin', 'Pond\'s', 'Dove', 'L\'Oreal', 'Nivea','Beardo','Sunflower Oil']
 
-# Function to filter brand names based on a pre-defined list
 def filter_known_brand_names(text):
     for brand in known_brands:
         if re.search(brand, text, re.IGNORECASE):
             return brand
     return 'Unknown'
 
-# Enhanced preprocessing function to improve image quality for OCR
 def preprocess_image(image):
-    # Convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Increase contrast and brightness for better OCR accuracy
     contrast_image = cv2.convertScaleAbs(gray, alpha=1.5, beta=50)
 
-    # Apply edge detection to highlight text boundaries
     edges = cv2.Canny(contrast_image, threshold1=50, threshold2=150)
 
-    # Deskewing the image to correct any slant
     coords = np.column_stack(np.where(gray > 0))
     angle = cv2.minAreaRect(coords)[-1]
     if angle < -45:
@@ -46,51 +40,41 @@ def preprocess_image(image):
     M = cv2.getRotationMatrix2D(center, angle, 1.0)
     gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     
-    # Apply adaptive thresholding to create a binary image
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
-    # Apply morphological operations to enhance text regions
     kernel = np.ones((2, 2), np.uint8)
     dilated = cv2.dilate(thresh, kernel, iterations=1)
 
     return dilated
 
-# Function to extract text using Tesseract with better configuration
 def extract_text_with_tesseract(image):
     processed_image = preprocess_image(image)
-    config = '--oem 3 --psm 6'  # LSTM-based OCR and assuming single uniform block of text
+    config = '--oem 3 --psm 6'  
     text = pytesseract.image_to_string(processed_image, config=config)
     return text
 
-# Fallback OCR function using EasyOCR
 def extract_text_with_easyocr(image):
-    reader = easyocr.Reader(['en'], gpu=False)  # English language, no GPU
+    reader = easyocr.Reader(['en'], gpu=False)  
     results = reader.readtext(image)
     text = " ".join([result[1] for result in results])
     return text
 
-# Combined function to extract text using both OCR engines
 def extract_text(image):
     text = extract_text_with_tesseract(image)
-    if not text.strip():  # If Tesseract fails, use EasyOCR as fallback
+    if not text.strip(): 
         text = extract_text_with_easyocr(image)
     return text
 
-# Function to extract expiry date using regex
 def extract_expiry_date(text):
-    # Improved regex pattern for date in various formats (DD/MM/YYYY, MM/YYYY, etc.)
     date_pattern = r'\b(0[1-9]|1[0-2])[/-](\d{4})\b|\b(0[1-9]|[12][0-9]|3[01])[/-](0[1-9]|1[0-2])[/-](\d{4})\b'
     match = re.search(date_pattern, text)
     return match.group(0) if match else 'Unknown'
 
-# Function to extract quantity using regex
 def extract_quantity(text):
-    # Regex pattern for typical quantities (e.g., 250ml, 1kg, 500g)
     quantity_pattern = r'(\d+(\.\d+)?\s?(ml|kg|g|l|oz|mg))'
     match = re.search(quantity_pattern, text, re.IGNORECASE)
     return match.group(0) if match else 'Unknown'
 
-# Function to estimate freshness based on expiry date
 def estimate_freshness(expiry_date):
     try:
         expiry = datetime.strptime(expiry_date, '%d/%m/%Y') if '/' in expiry_date else datetime.strptime(expiry_date, '%m/%Y')
@@ -132,7 +116,6 @@ def upload_image():
         image = Image.open(file.stream)
         image = np.array(image)
 
-        # Process the image and extract product details
         product_info = process_image(image)
         return jsonify(product_info)
     except Exception as e:
